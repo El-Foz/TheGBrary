@@ -8,23 +8,23 @@
     <title>Sign Up!</title>
 </head>
 <body>
-    <form action="/signup" method="post" id="login">
+    <form action="/signupcomplete" method="post" id="login">
         <p>
             Sign Up<br><br>
             <label for="firstname">First Name</label><br>
-            <input type="text" name="firstname" id="first"><br>
+            <input type="text" name="firstname" id="first" required>*<br>
 
             <label for="lastname">Last Name </label><br>
-            <input type="text" name="lastname" id="last"><br>
+            <input type="text" name="lastname" id="last" required>*<br>
 
             <label for="useremail">Email</label><br>
-            <input type="email" name="useremail" id="email"><br>
+            <input type="email" name="useremail" id="email" required>*<br>
 
             <label for="pw">Password</label><br>
-            <input type="password" name="pw" id="pw" placeholder="Must be at least 8 Characters"><br>
+            <input type="password" name="pw" id="pw" required placeholder="Must be at least 8 Characters">*<br>
 
             <label for="pw">Re-Enter Password</label><br>
-            <input type="text" name="reenterpw" id="reenterpw" ><br>
+            <input type="password" name="reenterpw" id="reenterpw" required >*<br>
             <input type="submit" value="Submit" id="submit">
         </p>
     </form>

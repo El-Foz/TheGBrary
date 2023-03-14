@@ -1,16 +1,20 @@
 {
   "dependencies": {
     "cookie-parser": "^1.4.6",
+    "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "nodemailer": "^6.9.1",
     "sqlite3": "^5.1.4"
   },
   "name": "communityproject",
   "description": "This is just an online library that I'm making for school feel free to copy this and do whatever you want as long as you credit me",
   "version": "1.0.0",
   "main": "index.js",
-  "devDependencies": {},
   "scripts": {
-    "test": "node index"
+    "test": "node index",
+    "start": "node index",
+    "dev": "nodemon index"
   },
   "repository": {
     "type": "git",
