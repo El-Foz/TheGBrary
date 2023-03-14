@@ -1,0 +1,24 @@
+{
+  "dependencies": {
+    "cookie-parser": "^1.4.6",
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.4"
+  },
+  "name": "communityproject",
+  "description": "This is just an online library that I'm making for school feel free to copy this and do whatever you want as long as you credit me",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "node index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheDNAHero/Online-Library"
+  },
+  "keywords": [
+    "library"
+  ],
+  "author": "Gabriel Fossner",
+  "license": "MIT"
+}
