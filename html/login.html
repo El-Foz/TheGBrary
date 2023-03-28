@@ -6,15 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="css/login.css">
     <title>Login</title>
+    <script src="/js/login.js" defer></script>
 </head>
 <body>
-    <form action="/login" method="post" id="login">
+    <form action="/logincomplete" method="post" id="login">
         <p>
             Sign In<br>
-        <input type="email" name="user" id="user" placeholder="Email"><br>
-        <input type="password" name="pw" id="pw" placeholder="Password"><br>
-        <input type="submit" value="Submit" id="submit"></p>
+        <input type="email" name="email" id="user" placeholder="Email" class="login"><br>
+        <input type="password" name="pw" id="pw" placeholder="Password" class="login"><br>
+        <input type="submit" value="Submit" id="submit" class="login"></p>
     </form>
-    <p><button onclick="location.replace('/signup')">New? Create an Account!</button></p>
+    <p><button onclick="location.replace('/signup')">New? Create an Account!</button></p><br>
+    <p><input type="checkbox"  id="viewpw" onclick="showPW()" >View Password</p>
 </body>
 </html>
