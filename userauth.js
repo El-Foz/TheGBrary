@@ -12,5 +12,4 @@ const uauth=(req, res, next)=>{
         })
     }
 }
-//test
 module.exports=uauth
