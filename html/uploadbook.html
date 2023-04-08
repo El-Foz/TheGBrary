@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Book</title>
+    <link rel="stylesheet" href="css/upload.css">
+</head>
+<body>
+    <form action="/uploadbookmethod" enctype='multipart/form-data' method="post" >
+        <input type="file" name="cover" id="cover" accept="image/*">
+        <br>
+        <input type="text" name="title" id="title" placeholder="Title">
+        <br>
+        <input type="text" name="author" id="author">
+        <br>
+        <input type="submit" value="Submit">
+    </form>
+</body>
+</html>

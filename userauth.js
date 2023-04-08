@@ -5,9 +5,9 @@ const uauth=(req, res, next)=>{
     }else{
         jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
             if(err){
-                console.log("penis")
                 return res.redirect('/login')
             }else{
+                console.log(decoded)
                 next()
             }
         })

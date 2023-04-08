@@ -9,6 +9,19 @@ const nodemailer=require('nodemailer')
 const cookieParser=require("cookie-parser")
 const {emailauth}=require('./emailauth.js')
 const uauth=require('./userauth')
+const multer=require("multer")
+const storage = multer.diskStorage({   
+    destination: function(req, file, cb) { 
+       cb(null, './imgUploads');    
+    }, 
+    filename: function (req, file, cb) { 
+       cb(null , file.originalname);   
+    }
+ });
+
+
+var upload = multer({ storage: storage })
+
 require('dotenv').config()
 app.use(express.urlencoded({
     extended: true
@@ -58,7 +71,6 @@ app.post('/logincomplete', (req, res, next)=>{
             email: email,
             pw: hashedpw
         }
-        //test test cannot be found in uverif for some reason or another. RIP I guess
         let isVerified=false
         let numOfIndex;
         for(let z in uverif){
@@ -87,6 +99,27 @@ app.post('/logincomplete', (req, res, next)=>{
     })
     
 })
+app.post("/uploadbookmethod", uauth, upload.single("cover"), (req, res, next)=>{
+    const file = req.file
+    let userData;
+    if (!file) {
+  
+      res.send("Please upload an Image!")
+    }
+    if(file.size>1000000){
+        res.send("Cover Image to large! try an image under 1 megabyte!")
+    }
+    jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
+        if(err){
+            return res.redirect('/login')
+        }else{
+            userData=decoded.data
+        }
+    })
+    db.run("INSERT INTO BOOKS VALUES (?, ?, ?, ?)", [file.filename, req.body.title, req.body.author, userData.email])
+    res.send(file)
+  
+})
 app.get('/verify/:token', (req, res)=>{
     const {token} = req.params;
     
@@ -105,9 +138,12 @@ app.get('/verify/:token', (req, res)=>{
     });
 })
 app.all('/', uauth, (req, res)=>{
-    res.send('test')
+    res.send(req.file)
 })
-app.use((req, res)=>{
+app.get("/uploadbook", uauth, (req, res)=>{
+    res.sendFile(path.join(__dirname+"/html/uploadbook.html"))
+})
+app.get("*",(req, res)=>{
     res.status(404)
     res.sendFile(path.join(__dirname+'/html/error404.html'))
 })
@@ -116,6 +152,6 @@ app.use((req, res)=>{
 
 
 
-app.listen(3000, ()=>{
+app.listen(3000 || process.env.PORT, ()=>{
     console.log('running on http://localhost:3000')
 })
