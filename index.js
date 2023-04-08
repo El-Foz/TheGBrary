@@ -10,6 +10,7 @@ const cookieParser=require("cookie-parser")
 const {emailauth}=require('./emailauth.js')
 const uauth=require('./userauth')
 const multer=require("multer")
+const fs=require("fs")
 const storage = multer.diskStorage({   
     destination: function(req, file, cb) { 
        cb(null, './imgUploads');    
@@ -21,7 +22,7 @@ const storage = multer.diskStorage({
 
 
 var upload = multer({ storage: storage })
-
+app.set('view engine', 'ejs');
 require('dotenv').config()
 app.use(express.urlencoded({
     extended: true
@@ -99,6 +100,9 @@ app.post('/logincomplete', (req, res, next)=>{
     })
     
 })
+app.get("/", (req, res)=>{
+    res.redirect("/browse")
+})
 app.post("/uploadbookmethod", uauth, upload.single("cover"), (req, res, next)=>{
     const file = req.file
     let userData;
@@ -116,9 +120,44 @@ app.post("/uploadbookmethod", uauth, upload.single("cover"), (req, res, next)=>{
             userData=decoded.data
         }
     })
-    db.run("INSERT INTO BOOKS VALUES (?, ?, ?, ?)", [file.filename, req.body.title, req.body.author, userData.email])
+    db.run("INSERT INTO BOOKS VALUES (?, ?, ?, ?, ?)", [file.filename, req.body.title, req.body.author, userData.email, file.mimetype])
     res.send(file)
   
+})
+app.get("/browse", (req, res)=>{
+    db.all("SELECT * FROM BOOKS", (err, row)=>{
+        if(err) console.error(err);
+        var books=row
+        for(var i=0; i< books.length; i++){
+            let n= fs.readFileSync("imgUploads/"+books[i].COVERPATH)
+            let buffer=n.toString('base64')
+            
+            books[i].COVERPATH=buffer        
+        }
+        res.render("browse", {books: books})
+    })
+})
+app.post("/searchbooks", (req, res)=>{
+    var books=[];
+    
+    db.all("SELECT * FROM  BOOKS", (err, row)=>{
+        if(err) console.error(err);
+        books=row.filter(e=>{
+            
+            return e.TITLE.toLowerCase().includes(req.body.search.toLowerCase())
+
+        })
+        for(var i=0; i< books.length; i++){
+            let n= fs.readFileSync("imgUploads/"+books[i].COVERPATH)
+            let buffer=n.toString('base64')
+            
+            books[i].COVERPATH=buffer        
+        }
+
+        res.render("searched", {books: books})
+    })
+
+
 })
 app.get('/verify/:token', (req, res)=>{
     const {token} = req.params;

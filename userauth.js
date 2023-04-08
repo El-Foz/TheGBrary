@@ -7,7 +7,6 @@ const uauth=(req, res, next)=>{
             if(err){
                 return res.redirect('/login')
             }else{
-                console.log(decoded)
                 next()
             }
         })
