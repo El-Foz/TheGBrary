@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Search Results</title>
 </head>
 <body>
     <% for( let index = 0; index < books.length; index++ ) { %>
@@ -12,6 +12,10 @@
             <img src="data:<%= books.MIMETYPE %>;base64,<%= books[index].COVERPATH %>" alt="Book Cover">
             <h2><%= books[index].TITLE %></h2>
             <h4><%= books[index].AUTHOR %></h4>
+            <% if (books[index].ISOUT==1) { %>
+                <h4 style="color:red">Book is taken out</h4>
+            <% } %>
+            <a href="/bookpage/<%= books[index].ID %>">Take Out Book</a>
         </div>
     <% } %>
 </body>

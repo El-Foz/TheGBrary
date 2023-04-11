@@ -1,0 +1,4 @@
+- User takes out a books
+- notification via email gets sent to owner
+- User and owner can communicate via a chat (may use socket)
+- page for your books and taken out books

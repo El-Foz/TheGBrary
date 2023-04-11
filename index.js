@@ -18,9 +18,7 @@ const storage = multer.diskStorage({
     filename: function (req, file, cb) { 
        cb(null , file.originalname);   
     }
- });
-
-
+});
 var upload = multer({ storage: storage })
 app.set('view engine', 'ejs');
 require('dotenv').config()
@@ -82,8 +80,6 @@ app.post('/logincomplete', (req, res, next)=>{
             }
         }
         if(isVerified){
-
-            let x=uverif.indexOf(test)
             const uauthtoken=jwt.sign({
                 data: {
                     firstname: row[numOfIndex].FIRSTNAME,
@@ -100,7 +96,7 @@ app.post('/logincomplete', (req, res, next)=>{
     })
     
 })
-app.get("/", (req, res)=>{
+app.all("/", (req, res)=>{
     res.redirect("/browse")
 })
 app.post("/uploadbookmethod", uauth, upload.single("cover"), (req, res, next)=>{
@@ -120,11 +116,11 @@ app.post("/uploadbookmethod", uauth, upload.single("cover"), (req, res, next)=>{
             userData=decoded.data
         }
     })
-    db.run("INSERT INTO BOOKS VALUES (?, ?, ?, ?, ?)", [file.filename, req.body.title, req.body.author, userData.email, file.mimetype])
+    db.run("INSERT INTO BOOKS (COVERPATH, TITLE, AUTHOR, EMAIL, MIMETYPE, ISOUT) VALUES (?, ?, ?, ?, ?, ?)", [file.filename, req.body.title, req.body.author, userData.email, file.mimetype, 0])
     res.send(file)
   
 })
-app.get("/browse", (req, res)=>{
+app.get("/browse", uauth, (req, res)=>{
     db.all("SELECT * FROM BOOKS", (err, row)=>{
         if(err) console.error(err);
         var books=row
@@ -137,7 +133,20 @@ app.get("/browse", (req, res)=>{
         res.render("browse", {books: books})
     })
 })
-app.post("/searchbooks", (req, res)=>{
+app.get("/bookpage/:id", uauth, (req, res)=>{
+    db.all("SELECT * FROM  BOOKS WHERE ID=?",[req.params.id], (err, row)=>{
+        if(err) console.error(err);
+        let books=row
+        
+        let n= fs.readFileSync("imgUploads/"+books[0].COVERPATH)
+        let buffer=n.toString('base64')
+            
+        books[0].COVERPATH=buffer        
+        
+        res.render("booktakeout", {books: books[0]})
+    })
+})
+app.post("/searchbooks", uauth, (req, res)=>{
     var books=[];
     
     db.all("SELECT * FROM  BOOKS", (err, row)=>{
@@ -182,15 +191,37 @@ app.all('/', uauth, (req, res)=>{
 app.get("/uploadbook", uauth, (req, res)=>{
     res.sendFile(path.join(__dirname+"/html/uploadbook.html"))
 })
-app.get("*",(req, res)=>{
-    res.status(404)
-    res.sendFile(path.join(__dirname+'/html/error404.html'))
+//TODO
+app.post("/takenoutbook", uauth, (req, res)=>{
+    res.send("dead end for now")
+})
+app.all("/yourbooks", uauth, (req, res)=>{
+    jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
+        if(err){
+            return res.redirect('/login')
+        }
+        db.all("SELECT * FROM BOOKS WHERE EMAIL=?", [decoded.data.email], (err, row)=>{
+            if(err) console.error(err)
+            books=row
+            for(var i=0; i< books.length; i++){
+                let n= fs.readFileSync("imgUploads/"+books[i].COVERPATH)
+                let buffer=n.toString('base64')
+                
+                books[i].COVERPATH=buffer        
+            }
+            res.render("yourbooks", {books: books})
+        })
+    })
 })
 
 
 
 
 
+app.get("*",(req, res)=>{
+    res.status(404)
+    res.sendFile(path.join(__dirname+'/html/error404.html'))
+})
 app.listen(3000 || process.env.PORT, ()=>{
     console.log('running on http://localhost:3000')
 })
