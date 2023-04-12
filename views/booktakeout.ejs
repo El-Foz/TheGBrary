@@ -12,18 +12,32 @@
     <h3><%= books.AUTHOR %></h3>
     <button onclick="takeout()">Take Out Book</button>
     <script>
+        let f='<%= books.ID %>'
+        console.log(f)
+        console.log(typeof f)
+        let c=parseInt(f)
+        let obj={
+            bookId: c
+        }
+        console.log(c)
         function takeout(){
             let x=confirm("Are you sure you want to take out the book?")
             if(x){
-                alert("OK!")
+                
                 fetch('/takenoutbook', {
                     method: 'POST',
+                    body: JSON.stringify(obj),
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ bookId: parseInt("<%= books.ID %>") })
+                    
                 })
-                
+                .then(response => response.text())
+                .then(text=>{
+                    if(text=="Hell Nah"){
+                        alert("You can't take out your own book!")
+                    }
+                })
                 .catch(error => {
                     console.error(error);
                 });

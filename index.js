@@ -11,6 +11,7 @@ const {emailauth}=require('./emailauth.js')
 const uauth=require('./userauth')
 const multer=require("multer")
 const fs=require("fs")
+const sendEmail=require("./email")
 const storage = multer.diskStorage({   
     destination: function(req, file, cb) { 
        cb(null, './imgUploads');    
@@ -26,7 +27,7 @@ app.use(express.urlencoded({
     extended: true
 }))
 app.use(cookieParser())
-
+app.use(express.json())
 const SQLite3 = sql.verbose();
 const db = new SQLite3.Database('project.db');
 app.all('/login',(req, res)=>{
@@ -193,7 +194,30 @@ app.get("/uploadbook", uauth, (req, res)=>{
 })
 //TODO
 app.post("/takenoutbook", uauth, (req, res)=>{
-    res.send("dead end for now")
+    let data=req.body
+    console.log("I want to murder a child")
+    jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
+        if(err) res.redirect('/login')
+        db.all("SELECT * FROM BOOKS WHERE ID=?", [data.bookId], (err, row)=>{
+            if (err) console.error(err)
+            if(row[0].EMAIL==decoded.data.email){
+                console.log("test")
+                res.status(418).send("Hell Nah")
+            }else{
+                db.serialize(async ()=>{
+                    await db.run("UPDATE BOOKS SET ISOUT=1, OUTEMAIL=? WHERE ID=?", [decoded.data.email, data.bookId])
+                    await db.all("SELECT * FROM BOOKS WHERE ID=?", [data.bookId], (err, row)=>{
+                        if (err) console.error(err)
+                        let emailBody=`Your Book, ${row[0].TITLE} by ${row[0].AUTHOR} has been taken out.
+                        Check the "Your Books" page to communicate with the person who has taken out the book`
+                        sendEmail(row[0].EMAIL, "Your Book Has Been Taken Out!", emailBody)
+                    })
+                })
+            }
+        })
+                
+                
+    })
 })
 app.all("/yourbooks", uauth, (req, res)=>{
     jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
@@ -213,7 +237,24 @@ app.all("/yourbooks", uauth, (req, res)=>{
         })
     })
 })
-
+app.all("/takenoutbooks", uauth, (req, res)=>{
+    jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
+        if(err){
+            return res.redirect('/login')
+        }
+        db.all("SELECT * FROM BOOKS WHERE OUTEMAIL=?", [decoded.data.email], (err, row)=>{
+            if(err) console.error(err)
+            books=row
+            for(var i=0; i< books.length; i++){
+                let n= fs.readFileSync("imgUploads/"+books[i].COVERPATH)
+                let buffer=n.toString('base64')
+                
+                books[i].COVERPATH=buffer        
+            }
+            res.render("yourbooks", {books: books})
+        })
+    })
+})
 
 
 
