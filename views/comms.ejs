@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= books.TITLE %></title>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script src="/js/message.js" defer></script>
+</head>
+<body>
+    <img src="data:<%= books.MIMETYPE %>;base64,<%= books.COVERPATH %>" alt="Book Cover">
+    <h1><%= books.TITLE %></h1>
+    <h3><%= books.AUTHOR %></h3>
+    <div>
+        <div id="msgs"></div>
+        <input type="text" placeholder="msg">
+        <button onclick="sendmessage()">Send</button>
+    </div>
+</body>
+</html>

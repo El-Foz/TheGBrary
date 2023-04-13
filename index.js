@@ -8,10 +8,13 @@ const crypto=require('crypto')
 const nodemailer=require('nodemailer')
 const cookieParser=require("cookie-parser")
 const {emailauth}=require('./emailauth.js')
+const cookie=require("cookie")
 const uauth=require('./userauth')
 const multer=require("multer")
 const fs=require("fs")
 const sendEmail=require("./email")
+var http = require('http').Server(app);
+const io = require('socket.io')(http);
 const storage = multer.diskStorage({   
     destination: function(req, file, cb) { 
        cb(null, './imgUploads');    
@@ -195,14 +198,15 @@ app.get("/uploadbook", uauth, (req, res)=>{
 //TODO
 app.post("/takenoutbook", uauth, (req, res)=>{
     let data=req.body
-    console.log("I want to murder a child")
     jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
         if(err) res.redirect('/login')
         db.all("SELECT * FROM BOOKS WHERE ID=?", [data.bookId], (err, row)=>{
             if (err) console.error(err)
             if(row[0].EMAIL==decoded.data.email){
-                console.log("test")
+                
                 res.status(418).send("Hell Nah")
+            }else if(row[0].ISOUT===1){
+                res.status(418).send("its out")   
             }else{
                 db.serialize(async ()=>{
                     await db.run("UPDATE BOOKS SET ISOUT=1, OUTEMAIL=? WHERE ID=?", [decoded.data.email, data.bookId])
@@ -255,14 +259,41 @@ app.all("/takenoutbooks", uauth, (req, res)=>{
         })
     })
 })
-
-
+app.get("/bookCommsPage/:id", uauth, (req, res)=>{
+    db.all("SELECT * FROM BOOKS WHERE ID=? AND ISOUT=1", [req.params.id], (err, row)=>{
+        if(err) console.error(err)
+        var books=row
+        for(var i=0; i< books.length; i++){
+            let n= fs.readFileSync("imgUploads/"+books[i].COVERPATH)
+            let buffer=n.toString('base64')
+            books[i].COVERPATH=buffer        
+        }
+        res.render("comms", {books: books[0]})
+    })
+})
+io.on('connection', socket => {
+    // Handle private messages between two users
+    console.log("test")
+    const tempcookies = socket.request.headers.cookie;
+    const cookies=cookie.parse(tempcookies)
+    jwt.verify(cookies.uauth, process.env.uauthkey, (err, decoded)=>{
+        if(err) console.error(err)
+        db.run("INSERT INTO CACHE VALUES (?, ?)", [decoded.data.email, socket.id])
+        console.log(cookies)
+    })
+    socket.on('private message', (data) => {
+      const recipientSocket = io.sockets.connected[data.recipientSocketId];
+      if (recipientSocket) {
+        recipientSocket.emit('private message', data.message);
+      }
+    });
+  });
 
 
 app.get("*",(req, res)=>{
     res.status(404)
     res.sendFile(path.join(__dirname+'/html/error404.html'))
 })
-app.listen(3000 || process.env.PORT, ()=>{
-    console.log('running on http://localhost:3000')
-})
+http.listen(3000 || process.env.PORT, function(){
+    console.log('listening on http://localhost:3000');
+ });
