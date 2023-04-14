@@ -268,7 +268,19 @@ app.get("/bookCommsPage/:id", uauth, (req, res)=>{
             let buffer=n.toString('base64')
             books[i].COVERPATH=buffer        
         }
-        res.render("comms", {books: books[0]})
+        jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
+            if(decoded.data.email==books[0].EMAIL || decoded.data.email==books[0].OUTEMAIL){
+                db.all("SELECT * FROM CACHE WHERE EMAIL=?", [books[0].EMAIL], (err, row)=>{
+                    if (err) console.error(err)
+                    db.all("SELECT * FROM USERS WHERE EMAIL=?", [books[0].EMAIL], (err, row)=>{
+                        if(err) console.error(err)
+                        res.render("comms", {books: books[0], outId: row[0].DATA, name: {firstname: row[0].FIRSTNAME, lastname: row[0].LASTNAME}})
+                    })
+                })
+            }else{
+                res.redirect("/404")
+            }
+        })
     })
 })
 io.on('connection', socket => {
@@ -279,7 +291,7 @@ io.on('connection', socket => {
     jwt.verify(cookies.uauth, process.env.uauthkey, (err, decoded)=>{
         if(err) console.error(err)
         db.run("INSERT INTO CACHE VALUES (?, ?)", [decoded.data.email, socket.id])
-        console.log(cookies)
+        
     })
     socket.on('private message', (data) => {
       const recipientSocket = io.sockets.connected[data.recipientSocketId];
@@ -287,6 +299,9 @@ io.on('connection', socket => {
         recipientSocket.emit('private message', data.message);
       }
     });
+    socket.on('disconnect', () => {
+        db.run("DELETE FROM CACHE WHERE DATA=?", [socket.id])
+      });
   });
 
 

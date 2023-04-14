@@ -7,7 +7,6 @@
     <title><%= books.TITLE %></title>
     <script src="/socket.io/socket.io.js"></script>
 
-    <script src="/js/message.js" defer></script>
 </head>
 <body>
     <img src="data:<%= books.MIMETYPE %>;base64,<%= books.COVERPATH %>" alt="Book Cover">
@@ -15,8 +14,25 @@
     <h3><%= books.AUTHOR %></h3>
     <div>
         <div id="msgs"></div>
-        <input type="text" placeholder="msg">
+        <input type="text" placeholder="msg" id="msg">
         <button onclick="sendmessage()">Send</button>
     </div>
+    <script>
+        const socket=io()
+        const data="<%= outId %>"
+        console.log(data)
+        function sendmessage(){
+            var msg=document.getElementById("msg")
+            var msgContent=msg.value
+            msg.value=""
+            socket.emit('private message', {recipientSocketId, message: msgContent});
+
+        }
+        socket.on('private message', (message) => {
+            let quadrant=document.createElement("P")
+            let name="<%= name.firstname %>"+" "+"<%= name.lastname %>"
+            quadrant.innerHTML=name+": "+message
+        });
+    </script>
 </body>
 </html>
