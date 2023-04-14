@@ -205,7 +205,7 @@ app.post("/takenoutbook", uauth, (req, res)=>{
             if(row[0].EMAIL==decoded.data.email){
                 
                 res.status(418).send("Hell Nah")
-            }else if(row[0].ISOUT===1){
+            }else if(row[0].ISOUT==1){
                 res.status(418).send("its out")   
             }else{
                 db.serialize(async ()=>{
@@ -270,11 +270,26 @@ app.get("/bookCommsPage/:id", uauth, (req, res)=>{
         }
         jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
             if(decoded.data.email==books[0].EMAIL || decoded.data.email==books[0].OUTEMAIL){
-                db.all("SELECT * FROM CACHE WHERE EMAIL=?", [books[0].EMAIL], (err, row)=>{
+                let usermail;
+                
+                if(decoded.data.email==books[0].EMAIL){
+                    usermail=books[0].OUTEMAIL
+                }else{
+                    usermail=books[0].EMAIL
+                }
+
+                db.all("SELECT * FROM CACHE WHERE EMAIL=?", [usermail], (err, row2)=>{
                     if (err) console.error(err)
-                    db.all("SELECT * FROM USERS WHERE EMAIL=?", [books[0].EMAIL], (err, row)=>{
+                    var books2=row2
+
+                    db.all("SELECT * FROM USERS WHERE EMAIL=?", [usermail], (err, row3)=>{
                         if(err) console.error(err)
-                        res.render("comms", {books: books[0], outId: row[0].DATA, name: {firstname: row[0].FIRSTNAME, lastname: row[0].LASTNAME}})
+                        console.log(row3)
+                        if(books2[0]){
+                            res.render("comms", {books: books[0], outId: books2[0].DATA, name: {firstname: row3[0].FIRSTNAME, lastname: row3[0].LASTNAME}})
+                        }else{
+                            res.render("comms", {books: books[0], outId: "", name: {firstname: row3[0].FIRSTNAME, lastname: row3[0].LASTNAME}})
+                        }
                     })
                 })
             }else{
@@ -285,7 +300,7 @@ app.get("/bookCommsPage/:id", uauth, (req, res)=>{
 })
 io.on('connection', socket => {
     // Handle private messages between two users
-    console.log("test")
+
     const tempcookies = socket.request.headers.cookie;
     const cookies=cookie.parse(tempcookies)
     jwt.verify(cookies.uauth, process.env.uauthkey, (err, decoded)=>{
@@ -298,6 +313,7 @@ io.on('connection', socket => {
       if (recipientSocket) {
         recipientSocket.emit('private message', data.message);
       }
+
     });
     socket.on('disconnect', () => {
         db.run("DELETE FROM CACHE WHERE DATA=?", [socket.id])
