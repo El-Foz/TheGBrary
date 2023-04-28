@@ -65,7 +65,11 @@ app.post('/signupcomplete', (req, res)=>{
 app.post('/logincomplete', (req, res, next)=>{
     const { email, pw }=req.body
     db.all('SELECT * FROM USERS', (err, row)=>{
-        if(err) console.log(err);
+        if(err) {
+
+            db.run("DELETE FROM CACHE")
+            console.error(err)
+        }
         let hashedpw=crypto.createHash('md5').update(pw).digest('hex');
         let uverif=row.map((item)=>{
             return {email: item.EMAIL, pw:item.PW}
@@ -126,7 +130,11 @@ app.post("/uploadbookmethod", uauth, upload.single("cover"), (req, res, next)=>{
 })
 app.get("/browse", uauth, (req, res)=>{
     db.all("SELECT * FROM BOOKS", (err, row)=>{
-        if(err) console.error(err);
+        if(err) {
+
+            db.run("DELETE FROM CACHE")
+            console.error(err)
+        }
         var books=row
         for(var i=0; i< books.length; i++){
             let n= fs.readFileSync("imgUploads/"+books[i].COVERPATH)
@@ -139,7 +147,11 @@ app.get("/browse", uauth, (req, res)=>{
 })
 app.get("/bookpage/:id", uauth, (req, res)=>{
     db.all("SELECT * FROM  BOOKS WHERE ID=?",[req.params.id], (err, row)=>{
-        if(err) console.error(err);
+        if(err) {
+
+            db.run("DELETE FROM CACHE")
+            console.error(err)
+        }
         let books=row
         
         let n= fs.readFileSync("imgUploads/"+books[0].COVERPATH)
@@ -154,7 +166,11 @@ app.post("/searchbooks", uauth, (req, res)=>{
     var books=[];
     
     db.all("SELECT * FROM  BOOKS", (err, row)=>{
-        if(err) console.error(err);
+        if(err) {
+
+            db.run("DELETE FROM CACHE")
+            console.error(err)
+        }
         books=row.filter(e=>{
             
             return e.TITLE.toLowerCase().includes(req.body.search.toLowerCase())
@@ -210,11 +226,12 @@ app.post("/takenoutbook", uauth, (req, res)=>{
             }else{
                 db.serialize(async ()=>{
                     await db.run("UPDATE BOOKS SET ISOUT=1, OUTEMAIL=? WHERE ID=?", [decoded.data.email, data.bookId])
-                    await db.all("SELECT * FROM BOOKS WHERE ID=?", [data.bookId], (err, row)=>{
+                    await db.all("SELECT * FROM BOOKS WHERE ID=?", [data.bookId], (err, row2)=>{
                         if (err) console.error(err)
-                        let emailBody=`Your Book, ${row[0].TITLE} by ${row[0].AUTHOR} has been taken out.
+                        let emailBody=`Your Book, ${row2[0].TITLE} by ${row2[0].AUTHOR} has been taken out.
                         Check the "Your Books" page to communicate with the person who has taken out the book`
                         sendEmail(row[0].EMAIL, "Your Book Has Been Taken Out!", emailBody)
+                        db.run("INSERT INTO MESSAGES (TAKEOUTEMAIL, OWNEREMAIL, BOOKID, MSGS) VALUES (?, ?, ?, ?)", [row2[0].OUTEMAIL, row2[0].EMAIL, row2[0].ID, "[]"])
                     })
                 })
             }
@@ -229,7 +246,11 @@ app.all("/yourbooks", uauth, (req, res)=>{
             return res.redirect('/login')
         }
         db.all("SELECT * FROM BOOKS WHERE EMAIL=?", [decoded.data.email], (err, row)=>{
-            if(err) console.error(err)
+            if(err) {
+
+                db.run("DELETE FROM CACHE")
+                console.error(err)
+            }
             books=row
             for(var i=0; i< books.length; i++){
                 let n= fs.readFileSync("imgUploads/"+books[i].COVERPATH)
@@ -240,6 +261,9 @@ app.all("/yourbooks", uauth, (req, res)=>{
             res.render("yourbooks", {books: books})
         })
     })
+})
+app.get("/tos", (req, res)=>{
+    res.sendFile(path.join(__dirname+"/html/tos.html"))
 })
 app.all("/takenoutbooks", uauth, (req, res)=>{
     jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
@@ -247,7 +271,11 @@ app.all("/takenoutbooks", uauth, (req, res)=>{
             return res.redirect('/login')
         }
         db.all("SELECT * FROM BOOKS WHERE OUTEMAIL=?", [decoded.data.email], (err, row)=>{
-            if(err) console.error(err)
+            if(err) {
+
+                db.run("DELETE FROM CACHE")
+                console.error(err)
+            }
             books=row
             for(var i=0; i< books.length; i++){
                 let n= fs.readFileSync("imgUploads/"+books[i].COVERPATH)
@@ -259,66 +287,106 @@ app.all("/takenoutbooks", uauth, (req, res)=>{
         })
     })
 })
+app.post("/returnBook", uauth, (req, res)=>{
+    let id=req.body.id;
+    console.log(id)
+    console.log("Test")
+    db.run("UPDATE BOOKS SET ISOUT=0, OUTEMAIL=NULL WHERE ID=?", [id])
+    res.json({test: "update"})
+})
 app.get("/bookCommsPage/:id", uauth, (req, res)=>{
     db.all("SELECT * FROM BOOKS WHERE ID=? AND ISOUT=1", [req.params.id], (err, row)=>{
-        if(err) console.error(err)
+        if(err) {
+
+            db.run("DELETE FROM CACHE")
+            console.error(err)
+        }
         var books=row
         for(var i=0; i< books.length; i++){
             let n= fs.readFileSync("imgUploads/"+books[i].COVERPATH)
             let buffer=n.toString('base64')
             books[i].COVERPATH=buffer        
         }
+        
         jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
-            if(decoded.data.email==books[0].EMAIL || decoded.data.email==books[0].OUTEMAIL){
-                let usermail;
-                
-                if(decoded.data.email==books[0].EMAIL){
-                    usermail=books[0].OUTEMAIL
-                }else{
-                    usermail=books[0].EMAIL
+            try{
+                if(typeof books[0]=="undefined"){
+                    res.redirect("/404")
                 }
+                else if(decoded.data.email==books[0].EMAIL || decoded.data.email==books[0].OUTEMAIL){
+                    let usermail;
+                    
+                    if(decoded.data.email==books[0].EMAIL){
+                        usermail=books[0].OUTEMAIL
+                    }else{
+                        usermail=books[0].EMAIL
+                    }
+                    console.log(usermail)
 
-                db.all("SELECT * FROM CACHE WHERE EMAIL=?", [usermail], (err, row2)=>{
-                    if (err) console.error(err)
-                    var books2=row2
+                    db.all("SELECT * FROM CACHE WHERE EMAIL=?", [usermail], (err, row2)=>{
+                        if (err) {
 
-                    db.all("SELECT * FROM USERS WHERE EMAIL=?", [usermail], (err, row3)=>{
-                        if(err) console.error(err)
-                        console.log(row3)
-                        if(books2[0]){
-                            res.render("comms", {books: books[0], outId: books2[0].DATA, name: {firstname: row3[0].FIRSTNAME, lastname: row3[0].LASTNAME}})
-                        }else{
-                            res.render("comms", {books: books[0], outId: "", name: {firstname: row3[0].FIRSTNAME, lastname: row3[0].LASTNAME}})
+                            db.run("DELETE FROM CACHE")
+                            console.error(err)
                         }
+                        var books2=row2
+
+                        db.all("SELECT * FROM USERS WHERE EMAIL=?", [usermail], (err, row3)=>{
+                            if(err) {
+                                db.run("DELETE FROM CACHE")
+                                console.error(err)
+                            }
+                            db.all("SELECT * FROM MESSAGES WHERE BOOKID=?", [req.params.id], (err, row4)=>{
+                                if(books2[0]){
+                                    console.log(row4[0].MSGS)
+                                    res.render("comms", {books: books[0], outId: books2[0].DATA, name: {firstname: row3[0].FIRSTNAME, lastname: row3[0].LASTNAME}, msgs: JSON.stringify(row4[0].MSGS)})
+                                }else{
+                                    console.log(row4[0].MSGS)
+                                    res.render("comms", {books: books[0], outId: "", name: {firstname: row3[0].FIRSTNAME, lastname: row3[0].LASTNAME}, msgs: JSON.stringify(row4[0].MSGS)})
+                                }
+                            })
+                        })
                     })
-                })
-            }else{
-                res.redirect("/404")
+                }else{
+                    res.redirect("/404")
+                }
+            }catch(err){
+                throw(err)
             }
         })
     })
 })
 io.on('connection', socket => {
     // Handle private messages between two users
-
+    
     const tempcookies = socket.request.headers.cookie;
     const cookies=cookie.parse(tempcookies)
     jwt.verify(cookies.uauth, process.env.uauthkey, (err, decoded)=>{
-        if(err) console.error(err)
+        if(err) {
+
+            db.run("DELETE FROM CACHE")
+            console.error(err)
+        }
         db.run("INSERT INTO CACHE VALUES (?, ?)", [decoded.data.email, socket.id])
         
     })
     socket.on('private message', (data) => {
-      const recipientSocket = io.sockets.connected[data.recipientSocketId];
+      const recipientSocket = data.recipientSocketId;
       if (recipientSocket) {
-        recipientSocket.emit('private message', data.message);
+        socket.broadcast.to(recipientSocket).emit('private message', {message: data.message});
       }
+      db.all("SELECT * FROM MESSAGES WHERE BOOKID=?", [data.book], (err, row)=>{
+        if (err) console.error(err)
+        let msgs=JSON.parse(row[0].MSGS)
+        msgs.push({msg: data.message, date: new Date()})
 
+        db.run("UPDATE MESSAGES SET MSGS=? WHERE BOOKID=?", [JSON.stringify(msgs), data.book])
+      })
     });
     socket.on('disconnect', () => {
         db.run("DELETE FROM CACHE WHERE DATA=?", [socket.id])
-      });
-  });
+    });
+});
 
 
 app.get("*",(req, res)=>{

@@ -12,6 +12,7 @@
     <img src="data:<%= books.MIMETYPE %>;base64,<%= books.COVERPATH %>" alt="Book Cover">
     <h1><%= books.TITLE %></h1>
     <h3><%= books.AUTHOR %></h3>
+    <button onclick="returnTheBook()">Return Book</button>
     <div>
         <div id="msgs"></div>
         <input type="text" placeholder="msg" id="msg">
@@ -20,19 +21,48 @@
     <script>
         const socket=io()
         const data="<%= outId %>"
-        console.log(data)
+        var data2='<%= msgs %>'
+        data2=data2.replace(/&#34;/g, '"');
+        data2=data2.substring(1)
+        data2=data2.slice(0, -1)
+        data2=JSON.parse(data2)
+        console.log(typeof data2)
+        let name2="<%= name.firstname %>"+" "+"<%= name.lastname %>"
+        for(let i in data2){
+            let balz=document.createElement("P")
+            balz.innerHTML=name2+": "+data2[i].msg
+            document.getElementById("msgs").appendChild(balz)
+        }
         function sendmessage(){
             var msg=document.getElementById("msg")
             var msgContent=msg.value
             msg.value=""
-            socket.emit('private message', {recipientSocketId, message: msgContent});
+            socket.emit('private message', {recipientSocketId: data, message: msgContent, book: "<%= books.ID %>"});
 
         }
         socket.on('private message', (message) => {
-            let quadrant=document.createElement("P")
+            let quadrant=document.createElement("p")
             let name="<%= name.firstname %>"+" "+"<%= name.lastname %>"
             quadrant.innerHTML=name+": "+message
+            document.getElementById("msgs").appendChild(quadrant)
+            console.log(message)
         });
+        function returnTheBook(){
+            let n=confirm("Are you sure?")
+            if(n){
+                let x={id: books.ID}
+                fetch("/returnBook", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(x)
+                })
+                .then(response => response.json())
+                .then(data => alert("Book has been returned"))
+                .catch(error => console.error(error));   
+            }
+        }
     </script>
 </body>
 </html>
