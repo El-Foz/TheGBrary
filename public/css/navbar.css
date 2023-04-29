@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu&display=swap');
+*{
+    font-family:'Ubuntu', sans-serif;  
+}
+#navbar{
+    width: 100vw;
+    height: 5vh;
+    position: fixed;
+    background-color: gray;
+    margin: 0px;
+    padding: 0px;
+    display:flex;
+    flex-direction: row;
+}
+body{
+    padding: 0px;
+    margin: 0px;
+}
+.navbar{
+    text-decoration: none;
+    color:white;
+    position: relative;
+    padding:0px;
+    margin: 0%;
+    font-size: 2vh;
+    height:5vh;
+    width: 15vw;
+    text-align: center;
+    float: left;
+}
+#logout{
+    width: 5vw;
+    height: 3vh;
+    color: white;
+    text-decoration: none;
+    background-color: #bd1515;
+    border-radius: 20%;
+    text-align: center;
+    margin: 1vh;
+    margin-left: auto;
+    float: right;
+    font-size: 1vh;
+}
+#logouttxt{
+    position: relative;
+    top:2%;
+}
+.br{
+    line-height: 3vh;
+}
+.navbar:hover{
+    background-color: darkgray;
+}
+#logout:hover{
+    background-color: darkred;
+}

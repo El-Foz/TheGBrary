@@ -33,6 +33,7 @@ app.use(cookieParser())
 app.use(express.json())
 const SQLite3 = sql.verbose();
 const db = new SQLite3.Database('project.db');
+db.run("DELETE FROM CACHE")
 app.all('/login',(req, res)=>{
     res.sendFile(path.join(__dirname+'/html/login.html'))
 })
@@ -61,6 +62,9 @@ app.post('/signupcomplete', (req, res)=>{
     }else{
         res.sendFile(path.join(__dirname+'/html/pwandreenterpw.html'))
     }
+})
+app.all("/", uauth, (req, res)=>{
+    res.redirect("/browse")
 })
 app.post('/logincomplete', (req, res, next)=>{
     const { email, pw }=req.body
@@ -104,14 +108,14 @@ app.post('/logincomplete', (req, res, next)=>{
     })
     
 })
-app.all("/", (req, res)=>{
-    res.redirect("/browse")
+app.all("/logout", uauth, (req, res)=>{
+    res.clearCookie("uauth")
+    res.redirect("/login")
 })
 app.post("/uploadbookmethod", uauth, upload.single("cover"), (req, res, next)=>{
     const file = req.file
     let userData;
     if (!file) {
-  
       res.send("Please upload an Image!")
     }
     if(file.size>1000000){
@@ -128,7 +132,7 @@ app.post("/uploadbookmethod", uauth, upload.single("cover"), (req, res, next)=>{
     res.send(file)
   
 })
-app.get("/browse", uauth, (req, res)=>{
+app.all("/browse", uauth, (req, res)=>{
     db.all("SELECT * FROM BOOKS", (err, row)=>{
         if(err) {
 
@@ -287,12 +291,19 @@ app.all("/takenoutbooks", uauth, (req, res)=>{
         })
     })
 })
-app.post("/returnBook", uauth, (req, res)=>{
+app.post("/returnTheBook", uauth, (req, res)=>{
     let id=req.body.id;
-    console.log(id)
-    console.log("Test")
-    db.run("UPDATE BOOKS SET ISOUT=0, OUTEMAIL=NULL WHERE ID=?", [id])
-    res.json({test: "update"})
+    jwt.verify(req.cookies.uauth, process.env.uauthkey, (err, decoded)=>{
+        db.all("SELECT * FROM BOOKS WHERE ID=?", [parseInt(id)], (err, row)=>{
+            if(decoded.data.email==row[0].OUTEMAIL){
+                db.run("UPDATE BOOKS SET ISOUT=0, OUTEMAIL=NULL WHERE ID=?", [id])
+                db.run("DELETE FROM MESSAGES WHERE BOOKID=?", [id])
+                res.json({test: "update"})
+            }else{
+                res.json({test: "no"})
+            }
+        })
+    })
 })
 app.get("/bookCommsPage/:id", uauth, (req, res)=>{
     db.all("SELECT * FROM BOOKS WHERE ID=? AND ISOUT=1", [req.params.id], (err, row)=>{
@@ -338,7 +349,6 @@ app.get("/bookCommsPage/:id", uauth, (req, res)=>{
                             }
                             db.all("SELECT * FROM MESSAGES WHERE BOOKID=?", [req.params.id], (err, row4)=>{
                                 if(books2[0]){
-                                    console.log(row4[0].MSGS)
                                     res.render("comms", {books: books[0], outId: books2[0].DATA, name: {firstname: row3[0].FIRSTNAME, lastname: row3[0].LASTNAME}, msgs: JSON.stringify(row4[0].MSGS)})
                                 }else{
                                     console.log(row4[0].MSGS)

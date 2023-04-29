@@ -49,18 +49,25 @@
         });
         function returnTheBook(){
             let n=confirm("Are you sure?")
+            console.log(n)
             if(n){
-                let x={id: books.ID}
-                fetch("/returnBook", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(x)
-                })
-                .then(response => response.json())
-                .then(data => alert("Book has been returned"))
-                .catch(error => console.error(error));   
+
+                let x={id:"<%= books.ID %>"}
+                var xhr = new XMLHttpRequest();
+                var url = "/returnTheBook";
+                var params = JSON.stringify(x);
+                xhr.open("POST", url, true);
+                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhr.onreadystatechange = function() {
+                    if(xhr.readyState == 4 && xhr.status == 200) {
+                        if(xhr.response.test=="no"){
+                            alert("You Can't return that, it's not your book!")
+                        }else{
+                            alert("Returned!")
+                        }
+                    }
+                }
+                xhr.send(params);  
             }
         }
     </script>

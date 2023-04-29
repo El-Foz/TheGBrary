@@ -5,8 +5,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Browse</title>
+    <link rel="stylesheet" href="css/navbar.css">
 </head>
 <body>
+    <div id="navbar">
+        <a href="/browse" id="browse" class="navbar">Browse</a>
+        <a href="/yourbooks" id="yourbooks" class="navbar">Your Books</a>
+        <a href="/uploadbook" id="uploadbook" class="navbar">Upload Book</a>
+        <a href="/takenoutbooks" id="takenoutbook" class="navbar">Taken Out Books</a>
+        <a href="/logout" id="logout"><p id="logouttxt">Log Out</p></a>
+    </div>
+    <br class="br"><br class="br">
     <form action="/searchbooks" method="post">
         <input type="text" name="search" id="search">
 
