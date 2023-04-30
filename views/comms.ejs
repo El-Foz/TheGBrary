@@ -6,9 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= books.TITLE %></title>
     <script src="/socket.io/socket.io.js"></script>
-
+    <link rel="stylesheet" href="css/navbar.css">
 </head>
 <body>
+    <div id="navbar">
+        <a href="/browse" id="browse" class="navbar">Browse</a>
+        <a href="/yourbooks" id="yourbooks" class="navbar">Your Books</a>
+        <a href="/uploadbook" id="uploadbook" class="navbar">Upload Book</a>
+        <a href="/takenoutbooks" id="takenoutbook" class="navbar">Taken Out Books</a>
+        <a href="/logout" id="logout"><p id="logouttxt">Log Out</p></a>
+    </div>
+    <br class="br"><br class="br">
     <img src="data:<%= books.MIMETYPE %>;base64,<%= books.COVERPATH %>" alt="Book Cover">
     <h1><%= books.TITLE %></h1>
     <h3><%= books.AUTHOR %></h3>
